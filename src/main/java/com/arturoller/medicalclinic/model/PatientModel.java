@@ -1,5 +1,6 @@
 package com.arturoller.medicalclinic.model;
 
+import com.arturoller.medicalclinic.dto.PatientCreateRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,6 +22,18 @@ public class PatientModel {
 
     public String getPassword() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public static PatientModel from(PatientCreateRequest patientCreateRequest) {
+        return new PatientModel(
+                patientCreateRequest.email(),
+                patientCreateRequest.password(),
+                patientCreateRequest.idCardNo(),
+                patientCreateRequest.firstName(),
+                patientCreateRequest.lastName(),
+                patientCreateRequest.phoneNumber(),
+                patientCreateRequest.birthday()
+        );
     }
 
 }
