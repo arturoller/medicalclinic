@@ -1,8 +1,8 @@
 package com.arturoller.medicalclinic.controller;
 
-import com.arturoller.medicalclinic.dto.PatientCreateRequest;
-import com.arturoller.medicalclinic.dto.PatientResponse;
-import com.arturoller.medicalclinic.dto.PatientUpdateRequest;
+import com.arturoller.medicalclinic.dto.CreatePatientCommand;
+import com.arturoller.medicalclinic.dto.PatientDto;
+import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
 import com.arturoller.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,36 +14,34 @@ import java.util.List;
 @RequestMapping("/patients")
 @RequiredArgsConstructor
 public class PatientController {
-
     private final PatientService patientService;
 
     @GetMapping
-    public List<PatientResponse> getAllPatients() {
-        return patientService.getAllPatients().stream()
-                .map(PatientResponse::from)
+    public List<PatientDto> getAll() {
+        return patientService.getAll().stream()
+                .map(PatientDto::from)
                 .toList();
     }
 
     @GetMapping("/{email}")
-    public PatientResponse getPatientByEmail(@PathVariable String email) {
-        return PatientResponse.from(patientService.getPatientByEmail(email));
+    public PatientDto findByEmail(@PathVariable String email) {
+        return PatientDto.from(patientService.findByEmail(email));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PatientResponse createPatient(@RequestBody PatientCreateRequest createRequest) {
-        return patientService.createPatient(createRequest);
+    public PatientDto create(@RequestBody CreatePatientCommand createRequest) {
+        return patientService.create(createRequest);
     }
 
     @PatchMapping("/{email}")
-    public PatientResponse updatePatient(@PathVariable String email, @RequestBody PatientUpdateRequest createRequest) {
-        return patientService.updatePatient(email, createRequest);
+    public PatientDto update(@PathVariable String email, @RequestBody UpdatePatientCommand createRequest) {
+        return patientService.update(email, createRequest);
     }
 
     @DeleteMapping("/{email}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePatient(@PathVariable String email) {
-        patientService.deletePatient(email);
+    public void delete(@PathVariable String email) {
+        patientService.delete(email);
     }
-
 }
