@@ -1,9 +1,11 @@
 package com.arturoller.medicalclinic.service;
 
+import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
 import com.arturoller.medicalclinic.exceptions.PatientAlreadyExistsException;
+import com.arturoller.medicalclinic.exceptions.PatientCurrentPasswordIsTheSame;
 import com.arturoller.medicalclinic.exceptions.PatientNotFoundException;
 import com.arturoller.medicalclinic.model.Patient;
 import com.arturoller.medicalclinic.repisitory.PatientRepository;
@@ -11,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,7 @@ public class PatientService {
             throw new PatientAlreadyExistsException("Patient already exists: " + command.email());
         }
         Patient patient = patientRepository.create(command.toEntity());
+
         return PatientDto.from(patient);
     }
 
@@ -45,5 +49,18 @@ public class PatientService {
         if (!patientRepository.delete(email)) {
             throw new PatientNotFoundException("Patient not found: " + email);
         }
+    }
+
+    public void changePassword(String email, ChangePasswordPatientCommand command) {
+        if (!patientRepository.exists(email)) {
+            throw new PatientNotFoundException("Patient not found: " + email);
+        }
+        Objects.requireNonNull(command.password());
+
+        Patient patient = findByEmail(email);
+        if (patient.passwordEquals(command.password())) {
+            throw new PatientCurrentPasswordIsTheSame("Current password is the same! Can't change password!");
+        }
+        patient.changePassword(command);
     }
 }

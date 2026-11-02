@@ -1,5 +1,6 @@
 package com.arturoller.medicalclinic.controller;
 
+import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
@@ -28,20 +29,25 @@ public class PatientController {
         return PatientDto.from(patientService.findByEmail(email));
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public PatientDto create(@RequestBody CreatePatientCommand createRequest) {
-        return patientService.create(createRequest);
-    }
-
     @PatchMapping("/{email}")
     public PatientDto update(@PathVariable String email, @RequestBody UpdatePatientCommand createRequest) {
         return patientService.update(email, createRequest);
+    }
+
+    @PatchMapping("/{email}/password")
+    public void changePassword(@PathVariable String email, @RequestBody ChangePasswordPatientCommand command) {
+        patientService.changePassword(email, command);
     }
 
     @DeleteMapping("/{email}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable String email) {
         patientService.delete(email);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public PatientDto create(@RequestBody CreatePatientCommand createRequest) {
+        return patientService.create(createRequest);
     }
 }
