@@ -1,11 +1,13 @@
 package com.arturoller.medicalclinic.dto;
 
+import com.arturoller.medicalclinic.model.Email;
 import com.arturoller.medicalclinic.model.Patient;
+import com.arturoller.medicalclinic.util.EmailUtil;
 
 import java.time.LocalDate;
 
 public record CreatePatientCommand(
-        String email,
+        Email email,
         String password,
         String idCardNo,
         String firstName,
@@ -13,7 +15,7 @@ public record CreatePatientCommand(
         String phoneNumber,
         LocalDate birthday
 ) {
-    public Patient toEntity() {
+    public Patient toModel() {
         return new Patient(
                 email,
                 password,

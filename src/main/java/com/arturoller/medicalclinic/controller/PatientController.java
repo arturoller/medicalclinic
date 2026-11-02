@@ -4,6 +4,7 @@ import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
+import com.arturoller.medicalclinic.model.Email;
 import com.arturoller.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,23 +26,23 @@ public class PatientController {
     }
 
     @GetMapping("/{email}")
-    public PatientDto findByEmail(@PathVariable String email) {
+    public PatientDto findByEmail(@PathVariable Email email) {
         return PatientDto.from(patientService.findByEmail(email));
     }
 
     @PatchMapping("/{email}")
-    public PatientDto update(@PathVariable String email, @RequestBody UpdatePatientCommand createRequest) {
+    public PatientDto update(@PathVariable Email email, @RequestBody UpdatePatientCommand createRequest) {
         return patientService.update(email, createRequest);
     }
 
     @PatchMapping("/{email}/password")
-    public void changePassword(@PathVariable String email, @RequestBody ChangePasswordPatientCommand command) {
+    public void changePassword(@PathVariable Email email, @RequestBody ChangePasswordPatientCommand command) {
         patientService.changePassword(email, command);
     }
 
     @DeleteMapping("/{email}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String email) {
+    public void delete(@PathVariable Email email) {
         patientService.delete(email);
     }
 

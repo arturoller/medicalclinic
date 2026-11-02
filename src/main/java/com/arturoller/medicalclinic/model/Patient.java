@@ -3,6 +3,7 @@ package com.arturoller.medicalclinic.model;
 import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,9 +14,13 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 public class Patient {
-    private String email;
+    private Email email;
+
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private String password;
-    private String idCardNo;
+
+    private final String idCardNo;
     private String firstName;
     private String lastName;
     private String phoneNumber;
@@ -41,23 +46,8 @@ public class Patient {
         );
     }
 
-    // Nie pozwola na zmiane dowodu osobistego uzytkownika
-    public void setIdCardNo(String idCardNo) {
-        throw new UnsupportedOperationException("You can't change id card no");
-    }
-
-    // Nie pozwala na odczytanie hasła! Cała logika z operacjami na haśle powinna znajdować się tutaj!
-    public String getPassword() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    // Nie pozwala na ustawienie hasłą z zewnątrz!
-    public String setPassword(String password) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    public boolean passwordEquals(String password) {
-        return password.equals(this.password);
+    public boolean passwordEquals(String rawPassword) {
+        return password.equals(rawPassword);
     }
 
     public void changePassword(ChangePasswordPatientCommand command) {
