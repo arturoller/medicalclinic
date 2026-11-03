@@ -12,5 +12,5 @@ public record UpdatePatientCommand(
         String lastName,
         String phoneNumber,
         LocalDate birthday
-) {}
-
+) {
+}

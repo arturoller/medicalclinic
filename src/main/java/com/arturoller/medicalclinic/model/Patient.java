@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 
@@ -34,10 +35,10 @@ public class Patient {
         setBirthday(command.birthday());
     }
 
-    public static Patient from(CreatePatientCommand command) {
+    public static Patient from(CreatePatientCommand command, PasswordEncoder passwordEncoder) {
         return new Patient(
                 command.email(),
-                command.password(),
+                passwordEncoder.encode(command.password()),
                 command.idCardNo(),
                 command.firstName(),
                 command.lastName(),
@@ -46,11 +47,11 @@ public class Patient {
         );
     }
 
-    public boolean passwordEquals(String rawPassword) {
-        return password.equals(rawPassword);
+    public boolean passwordMatches(String rawPassword, PasswordEncoder passwordEncoder) {
+        return passwordEncoder.matches(rawPassword, password);
     }
 
-    public void changePassword(ChangePasswordPatientCommand command) {
-        password = command.password();
+    public void changePassword(ChangePasswordPatientCommand command, PasswordEncoder passwordEncoder) {
+        password = passwordEncoder.encode(command.password());
     }
 }
