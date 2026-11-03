@@ -1,16 +1,22 @@
 package com.arturoller.medicalclinic.service;
 
+import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
+import com.arturoller.medicalclinic.exceptions.EmailAlreadyTakenException;
 import com.arturoller.medicalclinic.exceptions.PatientAlreadyExistsException;
+import com.arturoller.medicalclinic.exceptions.PatientCurrentPasswordIsTheSame;
 import com.arturoller.medicalclinic.exceptions.PatientNotFoundException;
+import com.arturoller.medicalclinic.model.Email;
 import com.arturoller.medicalclinic.model.Patient;
 import com.arturoller.medicalclinic.repisitory.PatientRepository;
+import com.arturoller.medicalclinic.util.EmailUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +27,7 @@ public class PatientService {
         return patientRepository.findAll();
     }
 
-    public Patient findByEmail(String email) {
+    public Patient findByEmail(Email email) {
         return patientRepository.findByEmail(email)
                 .orElseThrow(() -> new PatientNotFoundException("Patient not found: " + email));
     }
@@ -30,20 +36,38 @@ public class PatientService {
         if (patientRepository.exists(command.email())) {
             throw new PatientAlreadyExistsException("Patient already exists: " + command.email());
         }
-        Patient patient = patientRepository.create(command.toEntity());
+        Patient patient = patientRepository.create(command.toModel());
+
         return PatientDto.from(patient);
     }
 
-    public PatientDto update(String email, UpdatePatientCommand command) {
+    public PatientDto update(Email email, UpdatePatientCommand command) {
         Patient patient = findByEmail(email);
+        if (!email.equals(command.email()) && patientRepository.exists(command.email())) {
+            throw new EmailAlreadyTakenException("Email already exists: " + command.email());
+        }
         patient.update(command);
+        patientRepository.update(email, patient);
 
         return PatientDto.from(patient);
     }
 
-    public void delete(String email) {
+    public void delete(Email email) {
         if (!patientRepository.delete(email)) {
             throw new PatientNotFoundException("Patient not found: " + email);
         }
+    }
+
+    public void changePassword(Email email, ChangePasswordPatientCommand command) {
+        if (!patientRepository.exists(email)) {
+            throw new PatientNotFoundException("Patient not found: " + email);
+        }
+        Objects.requireNonNull(command.password());
+
+        Patient patient = findByEmail(email);
+        if (patient.passwordEquals(command.password())) {
+            throw new PatientCurrentPasswordIsTheSame("Current password is the same! Can't change password!");
+        }
+        patient.changePassword(command);
     }
 }

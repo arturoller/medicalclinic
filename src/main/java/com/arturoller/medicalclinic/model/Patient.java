@@ -1,7 +1,9 @@
 package com.arturoller.medicalclinic.model;
 
+import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,22 +14,20 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 public class Patient {
-    private String email;
+    private Email email;
+
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private String password;
-    private String idCardNo;
+
+    private final String idCardNo;
     private String firstName;
     private String lastName;
     private String phoneNumber;
     private LocalDate birthday;
 
-    public String getPassword() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
     public void update(UpdatePatientCommand command) {
         setEmail(command.email());
-        setPassword(command.password());
-        setIdCardNo(command.idCardNo());
         setFirstName(command.firstName());
         setLastName(command.lastName());
         setPhoneNumber(command.phoneNumber());
@@ -44,5 +44,13 @@ public class Patient {
                 command.phoneNumber(),
                 command.birthday()
         );
+    }
+
+    public boolean passwordEquals(String rawPassword) {
+        return password.equals(rawPassword);
+    }
+
+    public void changePassword(ChangePasswordPatientCommand command) {
+        password = command.password();
     }
 }
