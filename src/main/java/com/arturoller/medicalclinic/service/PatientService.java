@@ -69,6 +69,4 @@ public class PatientService {
         }
         patient.changePassword(command, passwordEncoder);
     }
-
-
 }
