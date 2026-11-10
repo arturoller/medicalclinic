@@ -1,12 +1,5 @@
 package com.arturoller.medicalclinic.dto;
 
-import com.arturoller.medicalclinic.model.Email;
-import com.arturoller.medicalclinic.model.Patient;
-
-import java.time.LocalDate;
-import com.arturoller.medicalclinic.model.Email;
-import com.arturoller.medicalclinic.model.Patient;
-
 import java.time.LocalDate;
 
 public record PatientDto(

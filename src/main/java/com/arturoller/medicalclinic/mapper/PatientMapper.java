@@ -16,12 +16,11 @@ public abstract class PatientMapper {
     @Mapping(source = "email.email", target = "email")
     public abstract PatientDto toDto(Patient patient);
 
-//    @Mapping(target = "password", expression = "java(passwordEncoder.encode(command.password()))")
     public Patient toModel(CreatePatientCommand command) {
         if (command == null) {
             return null;
         }
 
-        return Patient.from(command, passwordEncoder);
+        return Patient.from(command, passwordEncoder.encode(command.password()));
     }
 }

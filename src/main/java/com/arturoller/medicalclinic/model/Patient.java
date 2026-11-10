@@ -1,13 +1,11 @@
 package com.arturoller.medicalclinic.model;
 
-import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 
@@ -17,9 +15,8 @@ import java.time.LocalDate;
 public class Patient {
     private Email email;
 
-    @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
-    private String password;
+    private String passwordHash;
 
     private final String idCardNo;
     private String firstName;
@@ -35,23 +32,11 @@ public class Patient {
         setBirthday(command.birthday());
     }
 
-    public static Patient from(CreatePatientCommand command, PasswordEncoder passwordEncoder) {
-        return new Patient(
-                command.email(),
-                passwordEncoder.encode(command.password()),
-                command.idCardNo(),
-                command.firstName(),
-                command.lastName(),
-                command.phoneNumber(),
-                command.birthday()
-        );
+    public static Patient from(CreatePatientCommand command, String passwordHash) {
+        return new Patient(command.email(), passwordHash, command.idCardNo(), command.firstName(), command.lastName(), command.phoneNumber(), command.birthday());
     }
 
-    public boolean passwordMatches(String rawPassword, PasswordEncoder passwordEncoder) {
-        return passwordEncoder.matches(rawPassword, password);
-    }
-
-    public void changePassword(ChangePasswordPatientCommand command, PasswordEncoder passwordEncoder) {
-        password = passwordEncoder.encode(command.password());
+    public void changePassword(String newHash) {
+        this.passwordHash = newHash;
     }
 }
