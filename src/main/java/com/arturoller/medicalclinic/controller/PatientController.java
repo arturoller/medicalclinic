@@ -4,6 +4,7 @@ import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
+import com.arturoller.medicalclinic.mapper.PatientMapper;
 import com.arturoller.medicalclinic.model.Email;
 import com.arturoller.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
@@ -17,17 +18,18 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PatientController {
     private final PatientService patientService;
+    private final PatientMapper patientMapper;
 
     @GetMapping
     public List<PatientDto> getAll() {
         return patientService.getAll().stream()
-                .map(PatientDto::from)
+                .map(patientMapper::toDto)
                 .toList();
     }
 
     @GetMapping("/{email}")
     public PatientDto findByEmail(@PathVariable Email email) {
-        return PatientDto.from(patientService.findByEmail(email));
+        return patientMapper.toDto(patientService.findByEmail(email));
     }
 
     @PatchMapping("/{email}")

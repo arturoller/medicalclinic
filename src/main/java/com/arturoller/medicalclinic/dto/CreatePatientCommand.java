@@ -15,15 +15,4 @@ public record CreatePatientCommand(
         String phoneNumber,
         LocalDate birthday
 ) {
-    public Patient toModel() {
-        return new Patient(
-                email,
-                password,
-                idCardNo,
-                firstName,
-                lastName,
-                phoneNumber,
-                birthday
-        );
-    }
 }

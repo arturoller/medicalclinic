@@ -2,7 +2,6 @@ package com.arturoller.medicalclinic;
 
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.model.Email;
-import com.arturoller.medicalclinic.model.Patient;
 import com.arturoller.medicalclinic.service.PatientService;
 import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;

@@ -1,8 +1,9 @@
-package com.arturoller.medicalclinic.repisitory;
+package com.arturoller.medicalclinic.repository;
 
-import com.arturoller.medicalclinic.exceptions.EmailAlreadyTakenException;
+import com.arturoller.medicalclinic.exception.EmailAlreadyTakenException;
 import com.arturoller.medicalclinic.model.Email;
 import com.arturoller.medicalclinic.model.Patient;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -40,7 +41,7 @@ public class PatientRepository {
         Email newEmail = patient.getEmail();
         if (!oldEmail.equals(newEmail)) {
             if (patients.putIfAbsent(newEmail, patient) != null) {
-                throw new EmailAlreadyTakenException("Email already exists: "  + newEmail);
+                throw new EmailAlreadyTakenException("Email already exists: "  + newEmail, HttpStatus.CONFLICT);
             }
             patients.remove(oldEmail);
         }

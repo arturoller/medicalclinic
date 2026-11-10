@@ -10,9 +10,4 @@ public record Email(String email) {
             throw new InvalidEmailException("The provided email address is invalid: " + email);
         }
     }
-
-    @Override
-    public String toString() {
-        return email;
-    }
 }
