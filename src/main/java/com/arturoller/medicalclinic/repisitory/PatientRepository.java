@@ -1,5 +1,7 @@
 package com.arturoller.medicalclinic.repisitory;
 
+import com.arturoller.medicalclinic.exceptions.EmailAlreadyTakenException;
+import com.arturoller.medicalclinic.model.Email;
 import com.arturoller.medicalclinic.model.Patient;
 import org.springframework.stereotype.Repository;
 
@@ -10,17 +12,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Repository
 public class PatientRepository {
-    private final Map<String, Patient> patients = new ConcurrentHashMap<>();
+    private final Map<Email, Patient> patients = new ConcurrentHashMap<>();
 
     public List<Patient> findAll() {
         return List.copyOf(patients.values());
     }
 
-    public Optional<Patient> findByEmail(String email) {
+    public Optional<Patient> findByEmail(Email email) {
         return Optional.ofNullable(patients.get(email));
     }
 
-    public boolean exists(String email) {
+    public boolean exists(Email email) {
         return patients.containsKey(email);
     }
 
@@ -30,7 +32,18 @@ public class PatientRepository {
         return patient;
     }
 
-    public boolean delete(String email) {
+    public boolean delete(Email email) {
         return patients.remove(email) != null;
+    }
+
+    public Patient update(Email oldEmail, Patient patient) {
+        Email newEmail = patient.getEmail();
+        if (!oldEmail.equals(newEmail)) {
+            if (patients.putIfAbsent(newEmail, patient) != null) {
+                throw new EmailAlreadyTakenException("Email already exists: "  + newEmail);
+            }
+            patients.remove(oldEmail);
+        }
+        return patient;
     }
 }
