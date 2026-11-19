@@ -1,6 +1,6 @@
 package com.arturoller.medicalclinic.dto;
 
-public record ChangePasswordPatientCommand(
+public record ChangePasswordUserCommand(
         String currentPassword,
         String newPassword
 ) {

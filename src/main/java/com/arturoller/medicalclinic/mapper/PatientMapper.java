@@ -9,18 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Mapper(componentModel = "spring")
-public abstract class PatientMapper {
-    @Autowired
-    protected PasswordEncoder passwordEncoder;
+public interface PatientMapper {
+    @Mapping(target = "userId", source = "user.id")
+    PatientDto toDto(Patient patient);
 
-    @Mapping(source = "email.email", target = "email")
-    public abstract PatientDto toDto(Patient patient);
-
-    public Patient toModel(CreatePatientCommand command) {
-        if (command == null) {
-            return null;
-        }
-
-        return Patient.from(command, passwordEncoder.encode(command.password()));
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    default Patient toModel(CreatePatientCommand command) {
+        return Patient.from(command);
     }
+
 }
