@@ -1,12 +1,12 @@
 package com.arturoller.medicalclinic.controller;
 
-import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
+import com.arturoller.medicalclinic.dto.ChangePasswordUserCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
 import com.arturoller.medicalclinic.exception.EmailAlreadyTakenException;
-import com.arturoller.medicalclinic.exception.PatientCurrentPasswordIsTheSame;
-import com.arturoller.medicalclinic.exception.PatientNotFoundException;
+import com.arturoller.medicalclinic.exception.UserCurrentPasswordIsTheSame;
+import com.arturoller.medicalclinic.exception.UserNotFoundException;
 import com.arturoller.medicalclinic.model.Email;
 import com.arturoller.medicalclinic.model.Patient;
 import com.arturoller.medicalclinic.service.PatientService;
@@ -99,7 +99,7 @@ public class PatientControllerTest {
     void findByEmail_PatientNotExists_Returns404() throws Exception {
         // given
         Email email = new Email("maciek.nowak@onet.pl");
-        when(patientService.findByEmail(email)).thenThrow(new PatientNotFoundException("Patient not found: " + email, HttpStatus.NOT_FOUND));
+        when(patientService.findByEmail(email)).thenThrow(new UserNotFoundException("Patient not found: " + email, HttpStatus.NOT_FOUND));
 
         // when + then
         mockMvc.perform(MockMvcRequestBuilders.get("/patients/{email}", "maciek.nowak@onet.pl"))
@@ -111,7 +111,7 @@ public class PatientControllerTest {
         // given
         CreatePatientCommand command = new CreatePatientCommand(new Email("jan.kowalski@example.com"), "haslo123", "ABC123456",
         "Jan", "Kowalski", "500100200", LocalDate.of(1985, 3, 12));
-        when(patientService.create(any(CreatePatientCommand.class))).thenReturn(new PatientDto("jan.kowalski@example.com", "ABC123456", "Jan", "Kowalski",
+        when(patientService.create(any(CreatePatientCommand.class))).thenReturn(new PatientDto(new Email("jan.kowalski@example.com"), "ABC123456", "Jan", "Kowalski",
                 "500100200", LocalDate.of(1985, 3, 12)));
 
         // when + then
@@ -144,7 +144,7 @@ public class PatientControllerTest {
                 new Email("jan.kuba.kowalski@example.com"), "Jan Kuba", "Kowalski",
                 "500678200", LocalDate.of(1985, 3, 12));
         PatientDto expectedDto = new PatientDto(
-                "jan.kuba.kowalski@example.com", "ABC123456", "Jan Kuba", "Kowalski",
+                new Email("jan.kuba.kowalski@example.com"), "ABC123456", "Jan Kuba", "Kowalski",
                 "500678200", LocalDate.of(1985, 3, 12));
         when(patientService.update(eq(email), any(UpdatePatientCommand.class))).thenReturn(expectedDto);
 
@@ -182,7 +182,7 @@ public class PatientControllerTest {
     void changePassword_NewPassword_Returns200() throws Exception {
         // given
         Email email = new Email("jan.kowalski@example.com");
-        ChangePasswordPatientCommand command = new ChangePasswordPatientCommand( "haslo123", "nowehaslo123");
+        ChangePasswordUserCommand command = new ChangePasswordUserCommand( "haslo123", "nowehaslo123");
 
         // when + then
         mockMvc.perform(MockMvcRequestBuilders.patch("/patients/{email}/password", "jan.kowalski@example.com")
@@ -197,9 +197,9 @@ public class PatientControllerTest {
     void changePassword_SamePassword_Returns400() throws Exception {
         // given
         Email email = new Email("jan.kowalski@example.com");
-        ChangePasswordPatientCommand command = new ChangePasswordPatientCommand( "haslo123", "haslo123");
-        doThrow(new PatientCurrentPasswordIsTheSame("New password must differ from current one!", HttpStatus.CONFLICT))
-                .when(patientService).changePassword(eq(email), any(ChangePasswordPatientCommand.class));
+        ChangePasswordUserCommand command = new ChangePasswordUserCommand( "haslo123", "haslo123");
+        doThrow(new UserCurrentPasswordIsTheSame("New password must differ from current one!", HttpStatus.CONFLICT))
+                .when(patientService).changePassword(eq(email), any(ChangePasswordUserCommand.class));
 
         // when + then
         mockMvc.perform(MockMvcRequestBuilders.patch("/patients/{email}/password", "jan.kowalski@example.com")
@@ -224,7 +224,7 @@ public class PatientControllerTest {
     void delete_PatientNotFound_Returns404() throws Exception {
         // given
         Email email = new Email("maciek.nowak@onet.pl");
-        doThrow(new PatientNotFoundException("Patient not found: " + email, HttpStatus.NOT_FOUND)).when(patientService).delete(email);
+        doThrow(new UserNotFoundException("Patient not found: " + email, HttpStatus.NOT_FOUND)).when(patientService).delete(email);
 
         // when + then
         mockMvc.perform(MockMvcRequestBuilders.delete("/patients/{email}", "maciek.nowak@onet.pl"))

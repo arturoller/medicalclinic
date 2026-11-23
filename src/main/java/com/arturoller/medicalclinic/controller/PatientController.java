@@ -1,6 +1,6 @@
 package com.arturoller.medicalclinic.controller;
 
-import com.arturoller.medicalclinic.dto.ChangePasswordPatientCommand;
+import com.arturoller.medicalclinic.dto.ChangePasswordUserCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
@@ -18,39 +18,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PatientController {
     private final PatientService patientService;
-    private final PatientMapper patientMapper;
 
     @GetMapping
     public List<PatientDto> getAll() {
-        return patientService.getAll().stream()
-                .map(patientMapper::toDto)
-                .toList();
+        return patientService.getAll();
     }
 
-    @GetMapping("/{email}")
-    public PatientDto findByEmail(@PathVariable Email email) {
-        return patientMapper.toDto(patientService.findByEmail(email));
+    @GetMapping("/{patienId}")
+    public PatientDto getById(@PathVariable Integer patienId) {
+        return patientService.getById(patienId);
     }
 
-    @PatchMapping("/{email}")
-    public PatientDto update(@PathVariable Email email, @RequestBody UpdatePatientCommand createRequest) {
-        return patientService.update(email, createRequest);
+    @PutMapping("/{patienId}")
+    public PatientDto update(@PathVariable Integer patienId, @RequestBody UpdatePatientCommand command) {
+        return patientService.update(patienId, command);
     }
 
-    @PatchMapping("/{email}/password")
-    public void changePassword(@PathVariable Email email, @RequestBody ChangePasswordPatientCommand command) {
-        patientService.changePassword(email, command);
-    }
-
-    @DeleteMapping("/{email}")
+    @DeleteMapping("/{patienId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Email email) {
-        patientService.delete(email);
+    public void delete(@PathVariable Integer patienId) {
+        patientService.delete(patienId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PatientDto create(@RequestBody CreatePatientCommand createRequest) {
-        return patientService.create(createRequest);
+    public PatientDto create(@RequestBody CreatePatientCommand command) {
+        return patientService.create(command);
     }
 }
