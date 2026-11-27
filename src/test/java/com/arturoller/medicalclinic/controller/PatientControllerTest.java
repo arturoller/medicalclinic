@@ -1,234 +1,293 @@
 package com.arturoller.medicalclinic.controller;
 
-import com.arturoller.medicalclinic.dto.ChangePasswordUserCommand;
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
+import com.arturoller.medicalclinic.dto.PageDto;
 import com.arturoller.medicalclinic.dto.PatientDto;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
-import com.arturoller.medicalclinic.exception.EmailAlreadyTakenException;
-import com.arturoller.medicalclinic.exception.UserCurrentPasswordIsTheSame;
+import com.arturoller.medicalclinic.exception.InvalidSortFieldException;
+import com.arturoller.medicalclinic.exception.PatientAlreadyAssignedException;
+import com.arturoller.medicalclinic.exception.PatientNotFoundException;
+import com.arturoller.medicalclinic.exception.UserAlreadyAssignedException;
 import com.arturoller.medicalclinic.exception.UserNotFoundException;
-import com.arturoller.medicalclinic.model.Email;
-import com.arturoller.medicalclinic.model.Patient;
 import com.arturoller.medicalclinic.service.PatientService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.HttpStatus;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-public class PatientControllerTest {
-    @MockitoBean
-    PatientService patientService;
-
+@WebMvcTest(PatientController.class)
+class PatientControllerTest {
     @Autowired
     MockMvc mockMvc;
 
     @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
     ObjectMapper objectMapper;
 
+    @MockitoBean
+    PatientService patientService;
+
     @Test
-    void getAll_PatientsExists_ReturnListOfPatients() throws Exception {
+    void list_PatientsExist_Returns200AndPage() throws Exception {
         // given
-        List<Patient> patients = List.of(
-                Patient.from(new CreatePatientCommand(new Email("jan.kowalski@example.com"), "haslo123", "ABC123456",
-                        "Jan", "Kowalski", "500100200", LocalDate.of(1985, 3, 12)), passwordEncoder.encode("haslo123")),
-                Patient.from(new CreatePatientCommand(new Email("anna.nowak@example.com"), "haslo123", "DEF234567",
-                        "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24)), passwordEncoder.encode("haslo123"))
-        );
-        when(patientService.getAll()).thenReturn(patients);
+        when(patientService.list(PageRequest.of(0, 10))).thenReturn(new PageDto<>(
+                List.of(new PatientDto(1L, "Jan", "Kowalski", "500100200", LocalDate.of(1985, 3, 12), 11L),
+                        new PatientDto(2L, "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24), 12L)),
+                0, 10, 2L, 1, false, true));
 
         // when + then
-        mockMvc.perform(MockMvcRequestBuilders.get("/patients"))
-                .andDo(print())
+        mockMvc.perform(get("/patients"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].email").value("jan.kowalski@example.com"))
-                .andExpect(jsonPath("$[0].password").doesNotExist())
-                .andExpect(jsonPath("$[0].firstName").value("Jan"))
-                .andExpect(jsonPath("$[0].lastName").value("Kowalski"))
-                .andExpect(jsonPath("$[0].phoneNumber").value("500100200"))
-                .andExpect(jsonPath("$[0].birthday").value("1985-03-12"))
-                .andExpect(jsonPath("$[1].firstName").value("Anna"))
-                .andExpect(jsonPath("$[1].lastName").value("Nowak"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].firstName").value("Jan"))
+                .andExpect(jsonPath("$.content[0].birthday").value("1985-03-12"))
+                .andExpect(jsonPath("$.content[1].lastName").value("Nowak"))
+                .andExpect(jsonPath("$.content[1].userId").value(12))
+                .andExpect(jsonPath("$.pageNumber").value(0))
+                .andExpect(jsonPath("$.pageSize").value(10))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1));
     }
 
     @Test
-    void getAll_NoPatients_ReturnEmptyList() throws Exception {
+    void list_PageSizeAndSortGiven_PassesPageableToService() throws Exception {
         // given
-        List<Patient> patients = List.of();
-        when(patientService.getAll()).thenReturn(patients);
+        when(patientService.list(any())).thenReturn(new PageDto<>(
+                List.of(new PatientDto(2L, "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24), 12L)),
+                1, 1, 2L, 2, false, true));
 
         // when + then
-        mockMvc.perform(MockMvcRequestBuilders.get("/patients"))
+        mockMvc.perform(get("/patients")
+                        .param("page", "1")
+                        .param("size", "1")
+                        .param("sort", "birthday,desc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
+                .andExpect(jsonPath("$.content[0].id").value(2))
+                .andExpect(jsonPath("$.pageNumber").value(1))
+                .andExpect(jsonPath("$.pageSize").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2));
+
+        verify(patientService).list(PageRequest.of(1, 1, Sort.by(Sort.Direction.DESC, "birthday")));
     }
 
     @Test
-    void findByEmail_PatientExists_ReturnPatient() throws Exception {
+    void list_InvalidSortField_Returns400() throws Exception {
         // given
-        Patient patient = Patient.from(new CreatePatientCommand(new Email("jan.kowalski@example.com"), "haslo123", "ABC123456",
-                "Jan", "Kowalski", "500100200", LocalDate.of(1985, 3, 12)), passwordEncoder.encode("haslo123"));
-        when(patientService.findByEmail(patient.getEmail())).thenReturn(patient);
+        when(patientService.list(PageRequest.of(0, 10, Sort.by("xyz"))))
+                .thenThrow(new InvalidSortFieldException("Niedozwolone pole sortowania: xyz. Dozwolone pola: birthday, firstName, id, lastName"));
 
         // when + then
-        mockMvc.perform(MockMvcRequestBuilders.get("/patients/" + patient.getEmail().email()));
+        mockMvc.perform(get("/patients").param("sort", "xyz"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Niedozwolone pole sortowania: xyz. Dozwolone pola: birthday, firstName, id, lastName"))
+                .andExpect(jsonPath("$.status").value("BAD_REQUEST"));
     }
 
     @Test
-    void findByEmail_PatientNotExists_Returns404() throws Exception {
+    void getById_PatientExists_Returns200AndPatient() throws Exception {
         // given
-        Email email = new Email("maciek.nowak@onet.pl");
-        when(patientService.findByEmail(email)).thenThrow(new UserNotFoundException("Patient not found: " + email, HttpStatus.NOT_FOUND));
+        when(patientService.getById(1L))
+                .thenReturn(new PatientDto(1L, "Jan", "Kowalski", "500100200", LocalDate.of(1985, 3, 12), 11L));
 
         // when + then
-        mockMvc.perform(MockMvcRequestBuilders.get("/patients/{email}", "maciek.nowak@onet.pl"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/patients/{patientId}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.lastName").value("Kowalski"))
+                .andExpect(jsonPath("$.phoneNumber").value("500100200"))
+                .andExpect(jsonPath("$.userId").value(11));
     }
 
     @Test
-    void create_ValidPatient_Returns201AndPatientDto() throws Exception {
+    void getById_PatientNotFound_Returns404() throws Exception {
         // given
-        CreatePatientCommand command = new CreatePatientCommand(new Email("jan.kowalski@example.com"), "haslo123", "ABC123456",
-        "Jan", "Kowalski", "500100200", LocalDate.of(1985, 3, 12));
-        when(patientService.create(any(CreatePatientCommand.class))).thenReturn(new PatientDto(new Email("jan.kowalski@example.com"), "ABC123456", "Jan", "Kowalski",
-                "500100200", LocalDate.of(1985, 3, 12)));
+        when(patientService.getById(1L)).thenThrow(new PatientNotFoundException("Nie znaleziono pacjenta: 1"));
 
         // when + then
-        mockMvc.perform(MockMvcRequestBuilders.post("/patients")
-                        .content(objectMapper.writeValueAsString(command))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("jan.kowalski@example.com"))
-                .andExpect(jsonPath("$.firstName").value("Jan"))
-                .andExpect(jsonPath("$.phoneNumber").value("500100200"));
-
-        verify(patientService, times(1)).create(any(CreatePatientCommand.class));
+        mockMvc.perform(get("/patients/{patientId}", 1L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Nie znaleziono pacjenta: 1"))
+                .andExpect(jsonPath("$.status").value("NOT_FOUND"));
     }
 
     @Test
-    void create_MalformedJson_Returns400() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/patients")
-                        .content("{ to nie jest json")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+    void update_PatientExists_Returns200AndUpdatedPatient() throws Exception {
+        // given
+        UpdatePatientCommand command = new UpdatePatientCommand("Jan Kuba", "Kowalski", "500678200", LocalDate.of(1985, 3, 12));
+        when(patientService.update(1L, command))
+                .thenReturn(new PatientDto(1L, "Jan Kuba", "Kowalski", "500678200", LocalDate.of(1985, 3, 12), 11L));
+
+        // when + then
+        mockMvc.perform(put("/patients/{patientId}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(command)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.firstName").value("Jan Kuba"))
+                .andExpect(jsonPath("$.phoneNumber").value("500678200"));
+    }
+
+    @Test
+    void update_PatientNotFound_Returns404() throws Exception {
+        // given
+        UpdatePatientCommand command = new UpdatePatientCommand("Jan Kuba", "Kowalski", "500678200", LocalDate.of(1985, 3, 12));
+        when(patientService.update(1L, command)).thenThrow(new PatientNotFoundException("Nie znaleziono pacjenta: 1"));
+
+        // when + then
+        mockMvc.perform(put("/patients/{patientId}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(command)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Nie znaleziono pacjenta: 1"));
+    }
+
+    @Test
+    void update_MissingBirthday_Returns400WithoutCallingService() throws Exception {
+        // given
+        UpdatePatientCommand command = new UpdatePatientCommand("Jan Kuba", "Kowalski", "500678200", null);
+
+        // when + then
+        mockMvc.perform(put("/patients/{patientId}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(command)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("birthday: jest wymagane"));
 
         verifyNoInteractions(patientService);
     }
 
     @Test
-    void update_PatientExists_ReturnsUpdatedPatient() throws Exception {
-        // given
-        Email email = new Email("jan.kowalski@example.com");
-        UpdatePatientCommand command = new UpdatePatientCommand(
-                new Email("jan.kuba.kowalski@example.com"), "Jan Kuba", "Kowalski",
-                "500678200", LocalDate.of(1985, 3, 12));
-        PatientDto expectedDto = new PatientDto(
-                new Email("jan.kuba.kowalski@example.com"), "ABC123456", "Jan Kuba", "Kowalski",
-                "500678200", LocalDate.of(1985, 3, 12));
-        when(patientService.update(eq(email), any(UpdatePatientCommand.class))).thenReturn(expectedDto);
-
+    void delete_PatientWithoutDoctorsAndVisits_Returns204() throws Exception {
         // when + then
-        mockMvc.perform(MockMvcRequestBuilders.patch("/patients/{email}", "jan.kowalski@example.com")
-                        .content(objectMapper.writeValueAsString(command))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("jan.kuba.kowalski@example.com"))
-                .andExpect(jsonPath("$.firstName").value("Jan Kuba"))
-                .andExpect(jsonPath("$.phoneNumber").value("500678200"));
-
-        verify(patientService, times(1)).update(eq(email), any(UpdatePatientCommand.class));
-    }
-
-    @Test
-    void update_NewEmailAlreadyTaken_Returns409() throws Exception {
-        // given
-        Email email = new Email("jan.kowalski@example.com");
-        UpdatePatientCommand command = new UpdatePatientCommand(
-                new Email("anna.nowak@example.com"), "Jan", "Kowalski",
-                "500100200", LocalDate.of(1985, 3, 12));
-        when(patientService.update(eq(email), any(UpdatePatientCommand.class)))
-                .thenThrow(new EmailAlreadyTakenException(
-                        "Email already exists: anna.nowak@example.com", HttpStatus.CONFLICT));
-
-        // when + then
-        mockMvc.perform(MockMvcRequestBuilders.patch("/patients/{email}", "jan.kowalski@example.com")
-                        .content(objectMapper.writeValueAsString(command))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void changePassword_NewPassword_Returns200() throws Exception {
-        // given
-        Email email = new Email("jan.kowalski@example.com");
-        ChangePasswordUserCommand command = new ChangePasswordUserCommand( "haslo123", "nowehaslo123");
-
-        // when + then
-        mockMvc.perform(MockMvcRequestBuilders.patch("/patients/{email}/password", "jan.kowalski@example.com")
-                        .content(objectMapper.writeValueAsString(command))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-
-        verify(patientService, times(1)).changePassword(eq(email), eq(command));
-    }
-
-    @Test
-    void changePassword_SamePassword_Returns400() throws Exception {
-        // given
-        Email email = new Email("jan.kowalski@example.com");
-        ChangePasswordUserCommand command = new ChangePasswordUserCommand( "haslo123", "haslo123");
-        doThrow(new UserCurrentPasswordIsTheSame("New password must differ from current one!", HttpStatus.CONFLICT))
-                .when(patientService).changePassword(eq(email), any(ChangePasswordUserCommand.class));
-
-        // when + then
-        mockMvc.perform(MockMvcRequestBuilders.patch("/patients/{email}/password", "jan.kowalski@example.com")
-                        .content(objectMapper.writeValueAsString(command))
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void delete_PatientExists_Returns204() throws Exception {
-        // given
-        Email email = new Email("jan.kowalski@example.com");
-
-        // when + then
-        mockMvc.perform(MockMvcRequestBuilders.delete("/patients/{email}", "jan.kowalski@example.com"))
+        mockMvc.perform(delete("/patients/{patientId}", 1L))
                 .andExpect(status().isNoContent());
 
-        verify(patientService, times(1)).delete(email);
+        verify(patientService).delete(1L);
     }
 
     @Test
     void delete_PatientNotFound_Returns404() throws Exception {
         // given
-        Email email = new Email("maciek.nowak@onet.pl");
-        doThrow(new UserNotFoundException("Patient not found: " + email, HttpStatus.NOT_FOUND)).when(patientService).delete(email);
+        doThrow(new PatientNotFoundException("Nie znaleziono pacjenta: 1")).when(patientService).delete(1L);
 
         // when + then
-        mockMvc.perform(MockMvcRequestBuilders.delete("/patients/{email}", "maciek.nowak@onet.pl"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(delete("/patients/{patientId}", 1L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Nie znaleziono pacjenta: 1"));
     }
 
+    @Test
+    void delete_PatientAssigned_Returns409() throws Exception {
+        // given
+        doThrow(new PatientAlreadyAssignedException("Pacjent 1 jest przypisany do lekarza")).when(patientService).delete(1L);
+
+        // when + then
+        mockMvc.perform(delete("/patients/{patientId}", 1L))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Pacjent 1 jest przypisany do lekarza"))
+                .andExpect(jsonPath("$.status").value("CONFLICT"));
+    }
+
+    @Test
+    void create_ValidCommand_Returns201AndPatient() throws Exception {
+        // given
+        CreatePatientCommand command = new CreatePatientCommand(5L, "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24));
+        when(patientService.create(command))
+                .thenReturn(new PatientDto(1L, "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24), 5L));
+
+        // when + then
+        mockMvc.perform(post("/patients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(command)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.firstName").value("Anna"))
+                .andExpect(jsonPath("$.birthday").value("1992-07-24"))
+                .andExpect(jsonPath("$.userId").value(5));
+    }
+
+    @Test
+    void create_MissingUserId_Returns400WithoutCallingService() throws Exception {
+        // given
+        CreatePatientCommand command = new CreatePatientCommand(null, "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24));
+
+        // when + then
+        mockMvc.perform(post("/patients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(command)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("userId: jest wymagane"));
+
+        verifyNoInteractions(patientService);
+    }
+
+    @Test
+    void create_UserNotFound_Returns404() throws Exception {
+        // given
+        CreatePatientCommand command = new CreatePatientCommand(5L, "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24));
+        when(patientService.create(command)).thenThrow(new UserNotFoundException("Nie znaleziono użytkownika: 5"));
+
+        // when + then
+        mockMvc.perform(post("/patients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(command)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Nie znaleziono użytkownika: 5"));
+    }
+
+    @Test
+    void create_UserAlreadyHasPatient_Returns409() throws Exception {
+        // given
+        CreatePatientCommand command = new CreatePatientCommand(5L, "Anna", "Nowak", "501200300", LocalDate.of(1992, 7, 24));
+        when(patientService.create(command))
+                .thenThrow(new UserAlreadyAssignedException("Użytkownik 5 jest już przypisany do innego pacjenta"));
+
+        // when + then
+        mockMvc.perform(post("/patients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(command)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Użytkownik 5 jest już przypisany do innego pacjenta"));
+    }
+
+    @Test
+    void create_MalformedJson_Returns400() throws Exception {
+        // when + then
+        mockMvc.perform(post("/patients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ to nie jest json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Nie można odczytać treści żądania – sprawdź poprawność JSON-a i formaty pól"));
+
+        verifyNoInteractions(patientService);
+    }
+
+    @Test
+    void create_InvalidBirthdayFormat_Returns400WithoutCallingService() throws Exception {
+        // given
+        String body = """
+                {"userId": 5, "firstName": "Anna", "lastName": "Nowak", "phoneNumber": "501200300", "birthday": "24.07.1992"}
+                """;
+
+        // when + then
+        mockMvc.perform(post("/patients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value("Nie można odczytać treści żądania – sprawdź poprawność JSON-a i formaty pól"));
+
+        verifyNoInteractions(patientService);
+    }
 }

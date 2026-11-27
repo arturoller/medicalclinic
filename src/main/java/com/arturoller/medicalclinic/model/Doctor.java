@@ -1,5 +1,7 @@
 package com.arturoller.medicalclinic.model;
 
+import com.arturoller.medicalclinic.dto.CreateDoctorCommand;
+import com.arturoller.medicalclinic.dto.UpdateDoctorCommand;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +18,7 @@ public class Doctor {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
-    private Integer id;
+    private Long id;
 
     private String firstName;
     private String lastName;
@@ -44,8 +46,41 @@ public class Doctor {
     @Setter(AccessLevel.NONE)
     private Set<Institution> institutions = new HashSet<>();
 
+    public void assignPatient(Patient patient) {
+        patients.add(patient);
+        patient.getDoctors().add(this);
+    }
 
-    //update
+    public void unassignPatient(Patient patient) {
+        patients.remove(patient);
+        patient.getDoctors().remove(this);
+    }
 
-    //from
+    public boolean hasPatient(Patient patient) {
+        return patients.contains(patient);
+    }
+
+    public void assignInstitution(Institution institution) {
+        institutions.add(institution);
+        institution.getDoctors().add(this);
+    }
+
+    public void unassignInstitution(Institution institution) {
+        institutions.remove(institution);
+        institution.getDoctors().remove(this);
+    }
+
+    public boolean hasInstitution(Institution institution) {
+        return institutions.contains(institution);
+    }
+
+    public void update(UpdateDoctorCommand command) {
+        setFirstName(command.firstName());
+        setLastName(command.lastName());
+        setPhoneNumber(command.phoneNumber());
+    }
+
+    public static Doctor from(CreateDoctorCommand command) {
+        return new Doctor(null, command.firstName(), command.lastName(), command.phoneNumber(), null, new HashSet<>(), new HashSet<>());
+    }
 }

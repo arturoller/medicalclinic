@@ -2,13 +2,11 @@ package com.arturoller.medicalclinic.model;
 
 import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.UpdatePatientCommand;
-import com.arturoller.medicalclinic.util.EmailConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -21,7 +19,7 @@ public class Patient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
-    private Integer id;
+    private Long id;
 
     private String firstName;
     private String lastName;

@@ -2,8 +2,8 @@ package com.arturoller.medicalclinic.model;
 
 import com.arturoller.medicalclinic.dto.CreateUserCommand;
 import com.arturoller.medicalclinic.dto.UpdateUserCommand;
-import com.arturoller.medicalclinic.util.EmailConverter;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 
 @Getter
@@ -16,15 +16,14 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
-    private Integer id;
+    private Long id;
 
-    @Convert(converter = EmailConverter.class)
-    private Email email;
+    @Email
+    @Column(nullable = false, unique = true)
+    private String email;
 
     @Setter(AccessLevel.NONE)
     private String passwordHash;
-
-    private String idCardNo;
 
     public void update(UpdateUserCommand command) {
         setEmail(command.email());
@@ -35,6 +34,6 @@ public class User {
     }
 
     public static User from(CreateUserCommand command, String passwordHash) {
-        return new User(null, command.email(), passwordHash, command.idCardNo());
+        return new User(null, command.email(), passwordHash);
     }
 }
