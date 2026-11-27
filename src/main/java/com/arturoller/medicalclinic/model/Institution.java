@@ -1,5 +1,7 @@
 package com.arturoller.medicalclinic.model;
 
+import com.arturoller.medicalclinic.dto.CreateInstitutionCommand;
+import com.arturoller.medicalclinic.dto.UpdateInstitutionCommand;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +18,7 @@ public class Institution {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
-    private Integer id;
+    private Long id;
 
     @Column(nullable = false, unique = true)
     private String name;
@@ -29,4 +31,16 @@ public class Institution {
     @ManyToMany(mappedBy = "institutions")
     @Setter(AccessLevel.NONE)
     private Set<Doctor> doctors = new HashSet<>();
+
+    public void update(UpdateInstitutionCommand command) {
+        setName(command.name());
+        setCity(command.city());
+        setPostCode(command.postCode());
+        setStreet(command.street());
+        setBuildingNumber(command.buildingNumber());
+    }
+
+    public static Institution from(CreateInstitutionCommand command) {
+        return new Institution(null, command.name(), command.city(), command.postCode(), command.street(), command.buildingNumber(), new HashSet<>());
+    }
 }

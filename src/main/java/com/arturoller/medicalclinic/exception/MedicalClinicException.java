@@ -10,11 +10,6 @@ abstract public class MedicalClinicException extends RuntimeException {
         this.status = httpStatus;
     }
 
-    public MedicalClinicException(String message) {
-        super(message);
-        this.status = null;
-    }
-
     public HttpStatus getStatus() {
         return status;
     }

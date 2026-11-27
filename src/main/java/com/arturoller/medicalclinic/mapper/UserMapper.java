@@ -1,12 +1,9 @@
 package com.arturoller.medicalclinic.mapper;
 
-import com.arturoller.medicalclinic.dto.CreatePatientCommand;
 import com.arturoller.medicalclinic.dto.CreateUserCommand;
 import com.arturoller.medicalclinic.dto.UserDto;
-import com.arturoller.medicalclinic.model.Patient;
 import com.arturoller.medicalclinic.model.User;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 

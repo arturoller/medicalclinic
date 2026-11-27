@@ -1,10 +1,12 @@
 package com.arturoller.medicalclinic.dto;
 
-import com.arturoller.medicalclinic.model.Email;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
-import java.time.LocalDate;
-
+@Schema(description = "Nowy adres e-mail użytkownika")
 public record UpdateUserCommand(
-        Email email
+        @Schema(description = "Unikalny adres e-mail", example = "jan.nowy@example.com")
+        @NotBlank @Email String email
 ) {
 }

@@ -1,10 +1,12 @@
 package com.arturoller.medicalclinic.dto;
 
-import com.arturoller.medicalclinic.model.Email;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Użytkownik (hasło nigdy nie jest zwracane)")
 public record UserDto(
-        Integer id,
-        Email email,
-        String idCardNo
+        @Schema(description = "ID użytkownika", example = "1")
+        Long id,
+        @Schema(example = "jan.kowalski@example.com")
+        String email
 ) {
 }
